@@ -76,3 +76,35 @@ public class SumParserTest
 }
 
 public class SumOperation : IOperation { public decimal Eval() { throw new System.NotImplementedException(); } }
+
+
+
+public class EngineTest
+{
+    private readonly Mock<IOperation> _operationMock; private readonly Mock<ICalculatorParser> _parserMock; private readonly ICalculatorEngine _sut;
+    public EngineTest() { _parserMock = new Mock<ICalculatorParser>(); _operationMock = new Mock<IOperation>(); _sut = new CalculatorEngine(_parserMock.Object); }
+    [Fact(DisplayName = "Engine deve richiamare il parser per ottenere il risultato")]
+    public void EngineShouldCallParser()
+    {
+        _operationMock.Setup(x => x.Eval()).Returns(3); var op = _operationMock.Object; _parserMock.Setup(x => x.TryParse("1+1", out op)).Returns(true);
+        var result = _sut.Eval("1+1");
+        result.Should().Be.EqualTo(3m);
+    }
+    [Fact(DisplayName = "Quando non può parsare ritorna Boh!")]
+    public void EngineShouldHandleUnknownInputs()
+    {
+        IOperation op = null; _parserMock.Setup(x => x.TryParse("1+1", out op)).Returns(false);
+        var result = _sut.Eval("1+1");
+        result.Should().Be.EqualTo("Boh!");
+    }
+}
+
+public class CalculatorEngine : ICalculatorEngine
+{
+    private readonly ICalculatorParser _parser;
+    public CalculatorEngine(ICalculatorParser parser)
+    {
+        _parser = parser;
+    }
+    public object Eval(string userInput) { IOperation op; if (_parser.TryParse(userInput, out op)) { return op.Eval(); } return "Boh!"; }
+}
